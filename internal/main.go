@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"os"
 
-	dbpkg "Starostina-elena/pull_req_assign/internal/db"
+	storage "Starostina-elena/pull_req_assign/internal/storage"
 )
 
 func Init() error {
@@ -21,7 +21,7 @@ func Init() error {
 
 	db_link := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", dbUser, dbPass, dbHost, dbPort, dbName)
 
-	db, err := dbpkg.New(logger, db_link)
+	db, err := storage.New(logger, db_link)
 	if err != nil {
 		logger.Error("db connect failed", "error", err)
 		return err
