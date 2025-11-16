@@ -127,6 +127,7 @@ func GetPullRequestsAssignedHandler(log *slog.Logger, userService userService.Us
 			}
 			resp.OpenedPr = append(resp.OpenedPr, prResp)
 		}
+		resp.UserId = r.PathValue("user_id")
 		if err != nil {
 			log.Error("failed to get pull requests assigned to user", "user_id", r.PathValue("user_id"), "error", err)
 			http.Error(w, "Error while getting pull requests assigned to user", http.StatusInternalServerError)
