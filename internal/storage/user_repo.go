@@ -28,3 +28,59 @@ func (db *DB) GetUserByID(ctx context.Context, id int64) (core.User, error) {
 	}
 	return u, nil
 }
+
+func (db *DB) SetTeamToUser(ctx context.Context, userId, teamId int64) error {
+	_, err := db.conn.ExecContext(
+		ctx,
+		`UPDATE users SET team_id = $1 WHERE id = $2`,
+		teamId, userId,
+	)
+	if err != nil {
+		db.log.Error("failed to set team to user", "user_id", userId, "team_id", teamId, "error", err)
+		return err
+	}
+	db.log.Info("team set to user", "user_id", userId, "team_id", teamId)
+	return nil
+}
+
+func (db *DB) ExpelUserFromTeam(ctx context.Context, userId int64) error {
+	_, err := db.conn.ExecContext(
+		ctx,
+		`UPDATE users SET team_id = NULL WHERE id = $1`,
+		userId,
+	)
+	if err != nil {
+		db.log.Error("failed to expel user from team", "user_id", userId, "error", err)
+		return err
+	}
+	db.log.Info("user expelled from team", "user_id", userId)
+	return nil
+}
+
+func (db *DB) ActivateUser(ctx context.Context, userId int64) error {
+	_, err := db.conn.ExecContext(
+		ctx,
+		`UPDATE users SET is_active = TRUE WHERE id = $1`,
+		userId,
+	)
+	if err != nil {
+		db.log.Error("failed to activate user", "user_id", userId, "error", err)
+		return err
+	}
+	db.log.Info("user activated", "user_id", userId)
+	return nil
+}
+
+func (db *DB) DeactivateUser(ctx context.Context, userId int64) error {
+	_, err := db.conn.ExecContext(
+		ctx,
+		`UPDATE users SET is_active = FALSE WHERE id = $1`,
+		userId,
+	)
+	if err != nil {
+		db.log.Error("failed to deactivate user", "user_id", userId, "error", err)
+		return err
+	}
+	db.log.Info("user deactivated", "user_id", userId)
+	return nil
+}
