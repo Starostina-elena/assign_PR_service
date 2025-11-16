@@ -1,5 +1,7 @@
 package core
 
+import "database/sql"
+
 type Config struct {
 	DBHost     string
 	DBPort     string
@@ -22,10 +24,10 @@ type Team struct {
 }
 
 type PullRequest struct {
-	ID          int64
-	Title       string
-	IsOpened    bool
-	AuthorID    int64
-	Reviewer1ID int64
-	Reviewer2ID int64
+	ID          int64         `db:"id" json:"id"`
+	Title       string        `db:"title" json:"title"`
+	IsOpened    bool          `db:"is_opened" json:"is_opened"`
+	AuthorID    int64         `db:"author_id" json:"author_id"`
+	Reviewer1ID sql.NullInt64 `db:"reviewer1_id" json:"reviewer1_id"`
+	Reviewer2ID sql.NullInt64 `db:"reviewer2_id" json:"reviewer2_id"`
 }

@@ -41,8 +41,9 @@ func Init(cfg core.Config) (*App, error) {
 
 	userService := service.NewUserService(logger, db)
 	teamService := service.NewTeamService(logger, db)
+	pullRequestService := service.NewPullRequestService(logger, db)
 
-	r := api.NewRouter(logger, userService, teamService)
+	r := api.NewRouter(logger, userService, teamService, pullRequestService)
 
 	server := &http.Server{Addr: ":" + cfg.AppPort, Handler: r}
 
