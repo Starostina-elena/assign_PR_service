@@ -11,6 +11,7 @@ import (
 type TeamService interface {
 	CreateTeam(ctx context.Context, name string) (int64, error)
 	GetTeam(ctx context.Context, id int64) (core.Team, error)
+	GetTeamMembers(ctx context.Context, teamId int64) ([]core.User, error)
 }
 
 type TeamServiceImpl struct {

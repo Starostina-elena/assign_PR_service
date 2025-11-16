@@ -12,10 +12,10 @@ type Config struct {
 }
 
 type User struct {
-	ID       int64  `db:"id" json:"id"`
-	Name     string `db:"name" json:"name"`
-	TeamID   int64  `db:"team_id" json:"team_id"`
-	IsActive bool   `db:"is_active" json:"is_active"`
+	ID       int64         `db:"id" json:"id"`
+	Name     string        `db:"name" json:"name"`
+	TeamID   sql.NullInt64 `db:"team_id" json:"team_id"`
+	IsActive bool          `db:"is_active" json:"is_active"`
 }
 
 type Team struct {

@@ -15,6 +15,10 @@ func NewRouter(logger *slog.Logger, userService service.UserService,
 
 	mux.Handle("POST /users", handlers.CreateUserHandler(logger, userService))
 	mux.Handle("GET /users/{id}", handlers.GetUserHandler(logger, userService))
+	mux.Handle("PUT /users/{user_id}/user_team/{team_id}", handlers.SetUserTeamHandler(logger, userService))
+	mux.Handle("PUT /users/user_team/{user_id}", handlers.ExpellUserfromTeamHandler(logger, userService))
+	mux.Handle("PUT /users/activate/{user_id}", handlers.ActivateUserHandler(logger, userService))
+	mux.Handle("PUT /users/deactivate/{user_id}", handlers.DeactivateUserHandler(logger, userService))
 
 	mux.Handle("POST /teams", handlers.CreateTeamHandler(logger, teamService))
 	mux.Handle("GET /teams/{id}", handlers.GetTeamHandler(logger, teamService))

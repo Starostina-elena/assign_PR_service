@@ -22,7 +22,7 @@ func (db *DB) AddUser(ctx context.Context, name string, isActive bool) (int64, e
 
 func (db *DB) GetUserByID(ctx context.Context, id int64) (core.User, error) {
 	var u core.User
-	err := db.conn.GetContext(ctx, &u, `SELECT id, name, is_active FROM users WHERE id = $1`, id)
+	err := db.conn.GetContext(ctx, &u, `SELECT id, name, team_id, is_active FROM users WHERE id = $1`, id)
 	if err != nil {
 		return core.User{}, err
 	}
@@ -43,7 +43,7 @@ func (db *DB) SetTeamToUser(ctx context.Context, userId, teamId int64) error {
 	return nil
 }
 
-func (db *DB) ExpelUserFromTeam(ctx context.Context, userId int64) error {
+func (db *DB) ExpellUserFromTeam(ctx context.Context, userId int64) error {
 	_, err := db.conn.ExecContext(
 		ctx,
 		`UPDATE users SET team_id = NULL WHERE id = $1`,

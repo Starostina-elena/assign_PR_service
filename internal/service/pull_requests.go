@@ -13,6 +13,8 @@ import (
 type PullRequestService interface {
 	CreatePullRequest(ctx context.Context, title string, authorId int64, isOpened bool) (int64, error)
 	GetPullRequest(ctx context.Context, id int64) (core.PullRequest, error)
+	MergePullRequest(ctx context.Context, id int64) error
+	ChangeReviewer(ctx context.Context, pullReqId int64, numReviwer int64) error
 }
 
 type PullRequestServiceImpl struct {

@@ -11,6 +11,10 @@ import (
 type UserService interface {
 	CreateUser(ctx context.Context, name string, isActive bool) (int64, error)
 	GetUser(ctx context.Context, id int64) (core.User, error)
+	SetTeamToUser(ctx context.Context, userId, teamId int64) error
+	ExpellUserFromTeam(ctx context.Context, userId int64) error
+	ActivateUser(ctx context.Context, userId int64) error
+	DeactivateUser(ctx context.Context, userId int64) error
 }
 
 type UserServiceImpl struct {
@@ -41,8 +45,8 @@ func (s *UserServiceImpl) SetTeamToUser(ctx context.Context, userId, teamId int6
 	return s.storage.SetTeamToUser(ctx, userId, teamId)
 }
 
-func (s *UserServiceImpl) ExpelUserFromTeam(ctx context.Context, userId int64) error {
-	return s.storage.ExpelUserFromTeam(ctx, userId)
+func (s *UserServiceImpl) ExpellUserFromTeam(ctx context.Context, userId int64) error {
+	return s.storage.ExpellUserFromTeam(ctx, userId)
 }
 
 func (s *UserServiceImpl) ActivateUser(ctx context.Context, userId int64) error {
