@@ -84,3 +84,18 @@ func (db *DB) DeactivateUser(ctx context.Context, userId int64) error {
 	db.log.Info("user deactivated", "user_id", userId)
 	return nil
 }
+
+func (dn *DB) GetActiveCoworkers(ctx context.Context, userId int64) ([]core.User, error) {
+	var users []core.User
+	err := dn.conn.SelectContext(ctx, &users, `
+		SELECT id, name, is_active, team_id
+		FROM users
+		WHERE team_id = (SELECT team_id FROM users WHERE id = $1)
+		  AND is_active = TRUE
+		  AND id != $1
+	`, userId)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}
