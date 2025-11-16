@@ -53,7 +53,7 @@ curl -i -X POST 'http://localhost:8080/pullRequest/create' -H 'Content-Type: app
 ```
 #### Merge PR
 ```
-curl -i -X POST 'http://localhost:8080/pullRequest/merge' -H 'Content-Type: application/json' -d '{"pull_request_id": 1}'
+curl -i -X PUT 'http://localhost:8080/pullRequest/merge' -H 'Content-Type: application/json' -d '{"pull_request_id": 1}'
 ```
 
 ## Допущения, принятые в ходе работы:
