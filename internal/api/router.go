@@ -21,8 +21,8 @@ func NewRouter(logger *slog.Logger, userService service.UserService,
 	mux.Handle("PUT /users/deactivate/{user_id}", handlers.DeactivateUserHandler(logger, userService))
 	mux.Handle("GET /users/{user_id}/pull_requests_assigned", handlers.GetPullRequestsAssignedHandler(logger, userService))
 
-	mux.Handle("POST /teams", handlers.CreateTeamHandler(logger, teamService))
-	mux.Handle("GET /teams/{id}", handlers.GetTeamHandler(logger, teamService))
+	mux.Handle("POST /team/add", handlers.CreateTeamHandler(logger, teamService))
+	mux.Handle("GET /team/{id}", handlers.GetTeamHandler(logger, teamService))
 
 	mux.Handle("POST /pull_requests", handlers.CreatePullRequestHandler(logger, pullRequestService))
 	mux.Handle("GET /pull_requests/{id}", handlers.GetPullRequestHandler(logger, pullRequestService))
