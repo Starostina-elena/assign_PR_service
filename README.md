@@ -55,6 +55,10 @@ curl -i -X POST 'http://localhost:8080/pullRequest/create' -H 'Content-Type: app
 ```
 curl -i -X PUT 'http://localhost:8080/pullRequest/merge' -H 'Content-Type: application/json' -d '{"pull_request_id": 1}'
 ```
+#### Reassign PR
+```
+curl -sS -X POST http://localhost:8080/pullRequest/reassign -H "Content-Type: application/json" -d '{"pull_request_id":2,"old_user_id":"g2"}'
+```
 
 ## Допущения, принятые в ходе работы:
 - Для users/getReview не был задан конкретный путь с использованием UserId. Так как описанием API также не было указано на необходимость использования тела запроса, было принято решение поместить userId в url запроса после users/

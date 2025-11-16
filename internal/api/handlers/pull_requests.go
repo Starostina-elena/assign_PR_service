@@ -71,7 +71,7 @@ func CreatePullRequestHandler(log *slog.Logger, pullRequestService PullRequestSe
 		}
 
 		var resp CreatePullRequestResponse
-		resp.PR.PullRequestID = req.PullRequestID
+		resp.PR.PullRequestID = strconv.FormatInt(id, 10)
 		resp.PR.PullRequestName = pr.Title
 		resp.PR.AuthorID = pr.AuthorID
 		if pr.IsOpened {
@@ -208,5 +208,101 @@ func ChangeReviewerHandler(log *slog.Logger, pullRequestService PullRequestServi
 		}
 
 		w.WriteHeader(http.StatusOK)
+	}
+}
+
+type ReassignPullRequestRequest struct {
+	PullRequestID int64  `json:"pull_request_id"`
+	OldUserID     string `json:"old_user_id"`
+}
+
+type ReassignPullRequestResponse struct {
+	PR struct {
+		PullRequestID     string   `json:"pull_request_id"`
+		PullRequestName   string   `json:"pull_request_name"`
+		AuthorID          string   `json:"author_id"`
+		Status            string   `json:"status"`
+		AssignedReviewers []string `json:"assigned_reviewers"`
+		CreatedAt         string   `json:"createdAt,omitempty"`
+		MergedAt          string   `json:"mergedAt,omitempty"`
+	} `json:"pr"`
+	ReplacedBy string `json:"replaced_by"`
+}
+
+func ReassignPullRequestHandler(log *slog.Logger, pullRequestService PullRequestService.PullRequestService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var body ReassignPullRequestRequest
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "invalid request", http.StatusBadRequest)
+			return
+		}
+
+		id := body.PullRequestID
+
+		newReviewer, err := pullRequestService.ReassignReviewer(r.Context(), id, body.OldUserID)
+		if err != nil {
+			if strings.Contains(strings.ToLower(err.Error()), "no rows") {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusNotFound)
+				_ = json.NewEncoder(w).Encode(map[string]map[string]string{"error": {"code": "NOT_FOUND", "message": "pull request or user not found"}})
+				return
+			}
+			if errors.Is(err, core.PullRequestAlreadyMerged) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusConflict)
+				_ = json.NewEncoder(w).Encode(map[string]map[string]string{"error": {"code": "PR_MERGED", "message": "cannot reassign on merged PR"}})
+				return
+			}
+			if errors.Is(err, core.ErrNotAssigned) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusConflict)
+				_ = json.NewEncoder(w).Encode(map[string]map[string]string{"error": {"code": "NOT_ASSIGNED", "message": "reviewer is not assigned to this PR"}})
+				return
+			}
+			if errors.Is(err, core.ErrNotEnoughCoworkers) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusConflict)
+				_ = json.NewEncoder(w).Encode(map[string]map[string]string{"error": {"code": "NO_CANDIDATE", "message": "no active replacement candidate in team"}})
+				return
+			}
+
+			log.Error("failed to reassign reviewer", "id", id, "error", err)
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+
+		pr, err := pullRequestService.GetPullRequest(r.Context(), id)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(map[string]map[string]string{"error": {"code": "NOT_FOUND", "message": "pull request not found"}})
+			return
+		}
+
+		var assigned []string
+		if pr.Reviewer1ID.Valid {
+			assigned = append(assigned, pr.Reviewer1ID.String)
+		}
+		if pr.Reviewer2ID.Valid {
+			assigned = append(assigned, pr.Reviewer2ID.String)
+		}
+
+		var resp ReassignPullRequestResponse
+		resp.PR.PullRequestID = strconv.FormatInt(body.PullRequestID, 10)
+		resp.PR.PullRequestName = pr.Title
+		resp.PR.AuthorID = pr.AuthorID
+		if pr.IsOpened {
+			resp.PR.Status = "OPEN"
+		} else {
+			resp.PR.Status = "MERGED"
+		}
+		resp.PR.AssignedReviewers = assigned
+		resp.PR.CreatedAt = pr.CreatedAt
+		resp.PR.MergedAt = pr.MergedAt
+		resp.ReplacedBy = newReviewer
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(resp)
 	}
 }

@@ -15,6 +15,7 @@ type PullRequestService interface {
 	GetPullRequest(ctx context.Context, id int64) (core.PullRequest, error)
 	MergePullRequest(ctx context.Context, id int64) error
 	ChangeReviewer(ctx context.Context, pullReqId int64, numReviwer int64) error
+	ReassignReviewer(ctx context.Context, pullReqId int64, oldUserID string) (string, error)
 }
 
 type PullRequestServiceImpl struct {
@@ -109,4 +110,58 @@ func (s *PullRequestServiceImpl) ChangeReviewer(ctx context.Context, pullReqId i
 		}
 	}
 	return core.ErrNotEnoughCoworkers // achieve this line only if no suitable coworker found in cycle
+}
+
+func (s *PullRequestServiceImpl) ReassignReviewer(ctx context.Context, pullReqId int64, oldUserID string) (string, error) {
+	pr, err := s.storage.GetPullRequestByID(ctx, pullReqId)
+	if err != nil {
+		return "", err
+	}
+	if !pr.IsOpened {
+		return "", core.PullRequestAlreadyMerged
+	}
+
+	isReviewer1 := pr.Reviewer1ID.Valid && pr.Reviewer1ID.String == oldUserID
+	isReviewer2 := pr.Reviewer2ID.Valid && pr.Reviewer2ID.String == oldUserID
+	if !isReviewer1 && !isReviewer2 {
+		return "", core.ErrNotAssigned
+	}
+
+	coworkers, err := s.storage.GetActiveCoworkers(ctx, oldUserID)
+	if err != nil {
+		return "", err
+	}
+
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	if len(coworkers) > 1 {
+		rnd.Shuffle(len(coworkers), func(i, j int) { coworkers[i], coworkers[j] = coworkers[j], coworkers[i] })
+	}
+
+	for _, u := range coworkers {
+		if u.ID == oldUserID {
+			continue
+		}
+		if pr.Reviewer1ID.Valid && u.ID == pr.Reviewer1ID.String {
+			continue
+		}
+		if pr.Reviewer2ID.Valid && u.ID == pr.Reviewer2ID.String {
+			continue
+		}
+		if u.ID == pr.AuthorID {
+			continue
+		}
+
+		if isReviewer1 {
+			if err := s.storage.ChangeReviewer1(ctx, pullReqId, u.ID); err != nil {
+				return "", err
+			}
+		} else {
+			if err := s.storage.ChangeReviewer2(ctx, pullReqId, u.ID); err != nil {
+				return "", err
+			}
+		}
+		return u.ID, nil
+	}
+
+	return "", core.ErrNotEnoughCoworkers
 }
