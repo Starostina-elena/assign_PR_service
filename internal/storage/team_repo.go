@@ -28,3 +28,12 @@ func (db *DB) GetTeamByID(ctx context.Context, id int64) (core.Team, error) {
 	}
 	return t, nil
 }
+
+func (db *DB) GetTeamMembers(ctx context.Context, teamId int64) ([]core.User, error) {
+	var users []core.User
+	err := db.conn.SelectContext(ctx, &users, `SELECT id, name, is_active, team_id FROM users WHERE team_id = $1`, teamId)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}
