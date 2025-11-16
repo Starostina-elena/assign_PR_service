@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 
 	"Starostina-elena/pull_req_assign/internal/core"
@@ -13,6 +14,8 @@ import (
 type App struct {
 	DB     *storage.DB
 	Logger *slog.Logger
+	Router http.Handler
+	server *http.Server
 }
 
 func Init(cfg core.Config) (*App, error) {
