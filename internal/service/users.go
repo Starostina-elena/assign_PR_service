@@ -36,3 +36,19 @@ func (s *UserServiceImpl) GetUser(ctx context.Context, id int64) (core.User, err
 	}
 	return user, nil
 }
+
+func (s *UserServiceImpl) SetTeamToUser(ctx context.Context, userId, teamId int64) error {
+	return s.storage.SetTeamToUser(ctx, userId, teamId)
+}
+
+func (s *UserServiceImpl) ExpelUserFromTeam(ctx context.Context, userId int64) error {
+	return s.storage.ExpelUserFromTeam(ctx, userId)
+}
+
+func (s *UserServiceImpl) ActivateUser(ctx context.Context, userId int64) error {
+	return s.storage.ActivateUser(ctx, userId)
+}
+
+func (s *UserServiceImpl) DeactivateUser(ctx context.Context, userId int64) error {
+	return s.storage.DeactivateUser(ctx, userId)
+}
