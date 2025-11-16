@@ -40,3 +40,45 @@ func (db *DB) GetPullRequestByID(ctx context.Context, id int64) (core.PullReques
 	}
 	return pr, nil
 }
+
+func (db *DB) MergePullRequest(ctx context.Context, id int64) error {
+	_, err := db.conn.ExecContext(
+		ctx,
+		`UPDATE pull_requests SET is_opened = FALSE WHERE id = $1`,
+		id,
+	)
+	if err != nil {
+		db.log.Error("failed to merge pull request", "id", id, "error", err)
+		return err
+	}
+	db.log.Info("pull request merged", "id", id)
+	return nil
+}
+
+func (db *DB) ResetReviewer1(ctx context.Context, pullReqId int64, newReviewerId int64) error {
+	_, err := db.conn.ExecContext(
+		ctx,
+		`UPDATE pull_requests SET reviewer1_id = $1 WHERE id = $2`,
+		newReviewerId, pullReqId,
+	)
+	if err != nil {
+		db.log.Error("failed to reset reviewer1", "pull_request_id", pullReqId, "new_reviewer_id", newReviewerId, "error", err)
+		return err
+	}
+	db.log.Info("reviewer1 reset", "pull_request_id", pullReqId, "new_reviewer_id", newReviewerId)
+	return nil
+}
+
+func (db *DB) ResetReviewer2(ctx context.Context, pullReqId int64, newReviewerId int64) error {
+	_, err := db.conn.ExecContext(
+		ctx,
+		`UPDATE pull_requests SET reviewer2_id = $1 WHERE id = $2`,
+		newReviewerId, pullReqId,
+	)
+	if err != nil {
+		db.log.Error("failed to reset reviewer2", "pull_request_id", pullReqId, "new_reviewer_id", newReviewerId, "error", err)
+		return err
+	}
+	db.log.Info("reviewer2 reset", "pull_request_id", pullReqId, "new_reviewer_id", newReviewerId)
+	return nil
+}
