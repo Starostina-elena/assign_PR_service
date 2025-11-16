@@ -40,8 +40,9 @@ func Init(cfg core.Config) (*App, error) {
 	logger.Info("db initialized and migrations applied")
 
 	userService := service.NewUserService(logger, db)
+	teamService := service.NewTeamService(logger, db)
 
-	r := api.NewRouter(logger, userService)
+	r := api.NewRouter(logger, userService, teamService)
 
 	server := &http.Server{Addr: ":" + cfg.AppPort, Handler: r}
 

@@ -48,7 +48,7 @@ func GetUserHandler(log *slog.Logger, userService userService.UserService) http.
 		u, err := userService.GetUser(r.Context(), id)
 		if err != nil {
 			log.Error("failed to get user", "id", id, "error", err)
-			http.Error(w, "Error while getting user", http.StatusNotFound)
+			http.Error(w, "No such user", http.StatusNotFound)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
