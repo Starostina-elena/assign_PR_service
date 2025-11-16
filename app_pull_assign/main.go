@@ -46,6 +46,7 @@ func main() {
 		DBUser:     getenv("DB_USER", "postgres"),
 		DBPassword: getenv("DB_PASSWORD", "postgres"),
 		DBName:     getenv("DB_NAME", "postgres"),
+		AppPort:    getenv("APP_PORT", "8080"),
 	}
 	Run(cfg)
 }

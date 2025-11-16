@@ -7,15 +7,16 @@ import (
 	"net/http"
 	"os"
 
+	"Starostina-elena/pull_req_assign/internal/api"
 	"Starostina-elena/pull_req_assign/internal/core"
+	service "Starostina-elena/pull_req_assign/internal/service"
 	storage "Starostina-elena/pull_req_assign/internal/storage"
 )
 
 type App struct {
 	DB     *storage.DB
 	Logger *slog.Logger
-	Router http.Handler
-	server *http.Server
+	Server *http.Server
 }
 
 func Init(cfg core.Config) (*App, error) {
@@ -38,15 +39,34 @@ func Init(cfg core.Config) (*App, error) {
 
 	logger.Info("db initialized and migrations applied")
 
-	return &App{DB: db, Logger: logger}, nil
+	userService := service.NewUserService(logger, db)
+
+	r := api.NewRouter(logger, userService)
+
+	server := &http.Server{Addr: ":" + cfg.AppPort, Handler: r}
+
+	return &App{DB: db, Logger: logger, Server: server}, nil
 }
 
 func (a *App) Run(ctx context.Context) error {
 	a.Logger.Info("application starting")
+
+	go func() {
+		if err := a.Server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			a.Logger.Error("server failed", "error", err)
+		}
+	}()
+
+	<-ctx.Done()
 	return nil
 }
 
 func (a *App) Stop(ctx context.Context) error {
+	if a.Server != nil {
+		if err := a.Server.Shutdown(ctx); err != nil {
+			a.Logger.Error("server shutdown error", "error", err)
+		}
+	}
 	a.DB.Close()
 	a.Logger.Info("application stopped")
 	return nil
