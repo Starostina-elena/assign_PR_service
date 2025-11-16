@@ -149,7 +149,7 @@ func MergePullRequestHandler(log *slog.Logger, pullRequestService PullRequestSer
 
 		if err := pullRequestService.MergePullRequest(r.Context(), id); err != nil {
 			log.Error("failed to merge pull request", "id", id, "error", err)
-			http.Error(w, "Error while merging pull request", http.StatusNotFound)
+			http.Error(w, "Error while merging pull request", http.StatusInternalServerError)
 			return
 		}
 
