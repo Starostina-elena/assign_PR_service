@@ -69,6 +69,9 @@ func (s *PullRequestServiceImpl) ChangeReviewer(ctx context.Context, pullReqId i
 	if err != nil {
 		return err
 	}
+	if !pr.IsOpened {
+		return core.PullRequestAlreadyMerged
+	}
 	coworkers, err := s.storage.GetActiveCoworkers(ctx, pr.AuthorID)
 	if err != nil {
 		return err
@@ -105,6 +108,5 @@ func (s *PullRequestServiceImpl) ChangeReviewer(ctx context.Context, pullReqId i
 			return err
 		}
 	}
-
-	return errors.New("no available coworkers to assign as reviewer. Old reviewer was cleared")
+	return core.ErrNotEnoughCoworkers // achieve this line only if no suitable coworker found in cycle
 }

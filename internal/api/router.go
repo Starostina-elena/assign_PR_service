@@ -25,6 +25,8 @@ func NewRouter(logger *slog.Logger, userService service.UserService,
 
 	mux.Handle("POST /pull_requests", handlers.CreatePullRequestHandler(logger, pullRequestService))
 	mux.Handle("GET /pull_requests/{id}", handlers.GetPullRequestHandler(logger, pullRequestService))
+	mux.Handle("PUT /pull_requests/{pull_request_id}/reviewer/{num_reviewer}", handlers.ChangeReviewerHandler(logger, pullRequestService))
+	mux.Handle("PUT /pull_requests/{id}/merge", handlers.MergePullRequestHandler(logger, pullRequestService))
 
 	return mux
 }
