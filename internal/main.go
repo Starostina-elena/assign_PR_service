@@ -1,54 +1,50 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
 
+	"Starostina-elena/pull_req_assign/internal/core"
 	storage "Starostina-elena/pull_req_assign/internal/storage"
 )
 
-func Init() error {
+type App struct {
+	DB     *storage.DB
+	Logger *slog.Logger
+}
+
+func Init(cfg core.Config) (*App, error) {
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 
 	logger.Info("initializing db connection")
 
-	dbHost := getenv("DB_HOST", "db")
-	dbPort := getenv("DB_PORT", "5432")
-	dbUser := getenv("DB_USER", "postgres")
-	dbPass := getenv("DB_PASSWORD", "postgres")
-	dbName := getenv("DB_NAME", "postgres")
-
-	db_link := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", dbUser, dbPass, dbHost, dbPort, dbName)
+	db_link := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName)
 
 	db, err := storage.New(logger, db_link)
 	if err != nil {
 		logger.Error("db connect failed", "error", err)
-		return err
+		return nil, err
 	}
-
 	if err := db.Migrate(); err != nil {
 		logger.Error("migrate failed", "error", err)
-		return err
+		return nil, err
 	}
 
 	logger.Info("db initialized and migrations applied")
-	defer db.Close()
 
-	db.AddUser("Vasya", true)
-	name, isActive, err := db.GetUserByID(1)
-	if err != nil {
-		logger.Error("failed to get user by ID", "error", err)
-	} else {
-		logger.Info("user retrieved", "name", name, "is_active", isActive)
-	}
+	return &App{DB: db, Logger: logger}, nil
+}
+
+func (a *App) Run(ctx context.Context) error {
+	a.Logger.Info("application starting")
 	return nil
 }
 
-func getenv(k, def string) string {
-	v := os.Getenv(k)
-	if v == "" {
-		return def
-	}
-	return v
+func (a *App) Stop(ctx context.Context) error {
+	a.DB.Close()
+	a.Logger.Info("application stopped")
+	return nil
 }
