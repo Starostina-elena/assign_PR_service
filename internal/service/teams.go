@@ -36,3 +36,7 @@ func (s *TeamServiceImpl) GetTeam(ctx context.Context, id int64) (core.Team, err
 	}
 	return team, nil
 }
+
+func (s *TeamServiceImpl) GetTeamMembers(ctx context.Context, teamId int64) ([]core.User, error) {
+	return s.storage.GetTeamMembers(ctx, teamId)
+}
