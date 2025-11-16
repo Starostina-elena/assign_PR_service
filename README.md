@@ -30,7 +30,7 @@ curl -i -X PUT http://localhost:8080/users/setIsActive -H "Content-Type: applica
 ```
 curl http://localhost:8080/users/u1/getReview
 ```
-### Создание команды
+#### Создание команды
 ```
 curl -i -X POST 'http://localhost:8080/team/add' -H 'Content-Type: application/json' -d '{
     "team_name": "payments",
@@ -40,13 +40,25 @@ curl -i -X POST 'http://localhost:8080/team/add' -H 'Content-Type: application/j
     ]
   }'
 ```
-### Получение команды
+#### Получение команды
 ```
 curl http://localhost:8080/team/1/get
 ```
+#### Создание PR
+```
+curl -i -X POST 'http://localhost:8080/pullRequest/create' -H 'Content-Type: application/json' -d '{
+    "pull_request_name": "Add search",
+    "author_id": "u1"
+  }'
+```
+#### Merge PR
+```
+curl -i -X POST 'http://localhost:8080/pullRequest/merge' -H 'Content-Type: application/json' -d '{"pull_request_id": 1}'
+```
 
-### Допущения, принятые в ходе работы:
+## Допущения, принятые в ходе работы:
 - Для users/getReview не был задан конкретный путь с использованием UserId. Так как описанием API также не было указано на необходимость использования тела запроса, было принято решение поместить userId в url запроса после users/
 - Также указанный getReview возвращает не все PR, а только открытые, потому что это показалось мне логичным. При необходимости фиксится снятием условия на is_opened = TRUE в internal/storage/user_repo.GetPullRequestsAssigned
 - У users также есть дополнительные эндпоинты (создание юзера, получение юзера по id, установка команды юзеру, удаление юзера из команды) для удобства тестирования 
 - В базе данных в целях оптимизации для PR используется не enum OPEN|MERGED, а булево is_opened. Для удобства пользователя is_opened заменяется на OPEN|MERGED при отдаче пользователю. 
+- Ближе к концу выполнения работы, внимательно изучая openapi.yml, с удивлением обнаружила, что для юзеров и PR в качестве id используются строки. Для юзеров исправила, для PR не успела Т_Т 
