@@ -99,3 +99,17 @@ func (dn *DB) GetActiveCoworkers(ctx context.Context, userId int64) ([]core.User
 	}
 	return users, nil
 }
+
+func (db *DB) GetPullRequestsAssigned(ctx context.Context, reviewerId int64) ([]core.PullRequest, error) {
+	var prs []core.PullRequest
+	err := db.conn.SelectContext(ctx, &prs, `
+		SELECT id, title, is_opened, author_id, reviewer1_id, reviewer2_id
+		FROM pull_requests
+		WHERE is_opened = TRUE
+		  AND (reviewer1_id = $1 OR reviewer2_id = $1)
+	`, reviewerId)
+	if err != nil {
+		return nil, err
+	}
+	return prs, nil
+}

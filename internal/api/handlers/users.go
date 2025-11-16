@@ -128,3 +128,45 @@ func DeactivateUserHandler(log *slog.Logger, userService userService.UserService
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
+
+type GetPullRequestsAssignedResponse struct {
+	OpenedPr []GetPullRequestResponse `json:"opened_pull_requests"`
+}
+
+func GetPullRequestsAssignedHandler(log *slog.Logger, userService userService.UserService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userId, err := strconv.ParseInt(r.PathValue("user_id"), 10, 64)
+		if err != nil {
+			http.Error(w, "invalid user id", http.StatusBadRequest)
+			return
+		}
+		prs, err := userService.GetPullRequestAssigned(r.Context(), userId)
+		resp := GetPullRequestsAssignedResponse{}
+		for _, pr := range prs {
+			prResp := GetPullRequestResponse{
+				ID:       pr.ID,
+				Title:    pr.Title,
+				AuthorID: pr.AuthorID,
+			}
+			if pr.IsOpened {
+				prResp.Status = "OPEN"
+			} else {
+				prResp.Status = "MERGED"
+			}
+			if pr.Reviewer1ID.Valid {
+				prResp.Reviewer1 = &pr.Reviewer1ID.Int64
+			}
+			if pr.Reviewer2ID.Valid {
+				prResp.Reviewer2 = &pr.Reviewer2ID.Int64
+			}
+			resp.OpenedPr = append(resp.OpenedPr, prResp)
+		}
+		if err != nil {
+			log.Error("failed to get pull requests assigned to user", "user_id", userId, "error", err)
+			http.Error(w, "Error while getting pull requests assigned to user", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(resp)
+	}
+}

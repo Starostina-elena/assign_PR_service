@@ -15,6 +15,7 @@ type UserService interface {
 	ExpellUserFromTeam(ctx context.Context, userId int64) error
 	ActivateUser(ctx context.Context, userId int64) error
 	DeactivateUser(ctx context.Context, userId int64) error
+	GetPullRequestAssigned(ctx context.Context, userId int64) ([]core.PullRequest, error)
 }
 
 type UserServiceImpl struct {
@@ -55,4 +56,8 @@ func (s *UserServiceImpl) ActivateUser(ctx context.Context, userId int64) error 
 
 func (s *UserServiceImpl) DeactivateUser(ctx context.Context, userId int64) error {
 	return s.storage.DeactivateUser(ctx, userId)
+}
+
+func (s *UserServiceImpl) GetPullRequestAssigned(ctx context.Context, userId int64) ([]core.PullRequest, error) {
+	return s.storage.GetPullRequestsAssigned(ctx, userId)
 }
