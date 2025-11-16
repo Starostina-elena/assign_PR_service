@@ -11,7 +11,7 @@ import (
 )
 
 type PullRequestService interface {
-	CreatePullRequest(ctx context.Context, title string, authorId int64, isOpened bool) (int64, error)
+	CreatePullRequest(ctx context.Context, title string, authorId string, isOpened bool) (int64, error)
 	GetPullRequest(ctx context.Context, id int64) (core.PullRequest, error)
 	MergePullRequest(ctx context.Context, id int64) error
 	ChangeReviewer(ctx context.Context, pullReqId int64, numReviwer int64) error
@@ -26,13 +26,13 @@ func NewPullRequestService(log *slog.Logger, storage *storage.DB) PullRequestSer
 	return &PullRequestServiceImpl{storage: storage, log: log}
 }
 
-func (s *PullRequestServiceImpl) CreatePullRequest(ctx context.Context, title string, authorId int64, isOpened bool) (int64, error) {
+func (s *PullRequestServiceImpl) CreatePullRequest(ctx context.Context, title string, authorId string, isOpened bool) (int64, error) {
 	if title == "" {
 		return 0, errors.New("title required")
 	}
 
-	var reviewer1 *int64
-	var reviewer2 *int64
+	var reviewer1 *string
+	var reviewer2 *string
 	if isOpened {
 		coworkers, err := s.storage.GetActiveCoworkers(ctx, authorId)
 		if err == nil {
@@ -81,10 +81,10 @@ func (s *PullRequestServiceImpl) ChangeReviewer(ctx context.Context, pullReqId i
 	rnd.Shuffle(len(coworkers), func(i, j int) { coworkers[i], coworkers[j] = coworkers[j], coworkers[i] })
 
 	for _, u := range coworkers {
-		if pr.Reviewer1ID.Valid && u.ID == pr.Reviewer1ID.Int64 {
+		if pr.Reviewer1ID.Valid && u.ID == pr.Reviewer1ID.String {
 			continue
 		}
-		if pr.Reviewer2ID.Valid && u.ID == pr.Reviewer2ID.Int64 {
+		if pr.Reviewer2ID.Valid && u.ID == pr.Reviewer2ID.String {
 			continue
 		}
 

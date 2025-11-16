@@ -10,12 +10,9 @@ import (
 )
 
 type CreateUserRequest struct {
+	Id       string `json:"id"`
 	Name     string `json:"name"`
 	IsActive bool   `json:"is_active"`
-}
-
-type CreateUserResponse struct {
-	ID int64 `json:"id"`
 }
 
 func CreateUserHandler(log *slog.Logger, userService userService.UserService) http.HandlerFunc {
@@ -25,7 +22,7 @@ func CreateUserHandler(log *slog.Logger, userService userService.UserService) ht
 			http.Error(w, "invalid request", http.StatusBadRequest)
 			return
 		}
-		id, err := userService.CreateUser(r.Context(), req.Name, req.IsActive)
+		err := userService.CreateUser(r.Context(), req.Id, req.Name, req.IsActive)
 		if err != nil {
 			log.Error("failed to create user", "error", err)
 			http.Error(w, "Error while creating user", http.StatusInternalServerError)
@@ -33,21 +30,14 @@ func CreateUserHandler(log *slog.Logger, userService userService.UserService) ht
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		resp := CreateUserResponse{ID: id}
-		_ = json.NewEncoder(w).Encode(resp)
 	}
 }
 
 func GetUserHandler(log *slog.Logger, userService userService.UserService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+		u, err := userService.GetUser(r.Context(), r.PathValue("id"))
 		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
-			return
-		}
-		u, err := userService.GetUser(r.Context(), id)
-		if err != nil {
-			log.Error("failed to get user", "id", id, "error", err)
+			log.Error("failed to get user", "id", r.PathValue("id"), "error", err)
 			http.Error(w, "No such user", http.StatusNotFound)
 			return
 		}
@@ -58,19 +48,14 @@ func GetUserHandler(log *slog.Logger, userService userService.UserService) http.
 
 func SetUserTeamHandler(log *slog.Logger, userService userService.UserService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId, err := strconv.ParseInt(r.PathValue("user_id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid user id", http.StatusBadRequest)
-			return
-		}
 		teamId, err := strconv.ParseInt(r.PathValue("team_id"), 10, 64)
 		if err != nil {
 			http.Error(w, "invalid team id", http.StatusBadRequest)
 			return
 		}
-		err = userService.SetTeamToUser(r.Context(), userId, teamId)
+		err = userService.SetTeamToUser(r.Context(), r.PathValue("user_id"), teamId)
 		if err != nil {
-			log.Error("failed to set user team", "user_id", userId, "team_id", teamId, "error", err)
+			log.Error("failed to set user team", "user_id", r.PathValue("user_id"), "team_id", teamId, "error", err)
 			http.Error(w, "Error while setting user team", http.StatusInternalServerError)
 			return
 		}
@@ -80,14 +65,9 @@ func SetUserTeamHandler(log *slog.Logger, userService userService.UserService) h
 
 func ExpellUserfromTeamHandler(log *slog.Logger, userService userService.UserService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId, err := strconv.ParseInt(r.PathValue("user_id"), 10, 64)
+		err := userService.ExpellUserFromTeam(r.Context(), r.PathValue("user_id"))
 		if err != nil {
-			http.Error(w, "invalid user id", http.StatusBadRequest)
-			return
-		}
-		err = userService.ExpellUserFromTeam(r.Context(), userId)
-		if err != nil {
-			log.Error("failed to expel user from team", "user_id", userId, "error", err)
+			log.Error("failed to expel user from team", "user_id", r.PathValue("user_id"), "error", err)
 			http.Error(w, "Error while expelling user from team", http.StatusInternalServerError)
 			return
 		}
@@ -95,55 +75,47 @@ func ExpellUserfromTeamHandler(log *slog.Logger, userService userService.UserSer
 	}
 }
 
-func ActivateUserHandler(log *slog.Logger, userService userService.UserService) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userId, err := strconv.ParseInt(r.PathValue("user_id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid user id", http.StatusBadRequest)
-			return
-		}
-		err = userService.ActivateUser(r.Context(), userId)
-		if err != nil {
-			log.Error("failed to activate user", "user_id", userId, "error", err)
-			http.Error(w, "Error while activating user", http.StatusInternalServerError)
-			return
-		}
-		w.WriteHeader(http.StatusNoContent)
-	}
+type ActivateUserRequest struct {
+	UserID   string `json:"user_id"`
+	IsActive bool   `json:"is_active"`
 }
 
-func DeactivateUserHandler(log *slog.Logger, userService userService.UserService) http.HandlerFunc {
+func SetUserIsActiveHandler(log *slog.Logger, userService userService.UserService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId, err := strconv.ParseInt(r.PathValue("user_id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid user id", http.StatusBadRequest)
+		var req ActivateUserRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "invalid request", http.StatusBadRequest)
 			return
 		}
-		err = userService.DeactivateUser(r.Context(), userId)
+		err := userService.SetUserIsActive(r.Context(), req.UserID, req.IsActive)
+		log.Info("Start setting user is active", "user id", req.UserID, "is active", req.IsActive)
 		if err != nil {
-			log.Error("failed to deactivate user", "user_id", userId, "error", err)
-			http.Error(w, "Error while deactivating user", http.StatusInternalServerError)
+			log.Error("failed to set user is active", "user_id", req.UserID, "error", err)
+			http.Error(w, "Error while setting user is active", http.StatusNotFound)
 			return
 		}
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
 type GetPullRequestsAssignedResponse struct {
-	OpenedPr []GetPullRequestResponse `json:"opened_pull_requests"`
+	UserId   string                        `json:"user_id"`
+	OpenedPr []GetPullRequestShortResponse `json:"pull_requests"`
+}
+
+type GetPullRequestShortResponse struct {
+	ID       int64  `json:"id"`
+	Title    string `json:"title"`
+	AuthorID string `json:"author_id"`
+	Status   string `json:"is_opened"`
 }
 
 func GetPullRequestsAssignedHandler(log *slog.Logger, userService userService.UserService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId, err := strconv.ParseInt(r.PathValue("user_id"), 10, 64)
-		if err != nil {
-			http.Error(w, "invalid user id", http.StatusBadRequest)
-			return
-		}
-		prs, err := userService.GetPullRequestAssigned(r.Context(), userId)
+		prs, err := userService.GetPullRequestAssigned(r.Context(), r.PathValue("user_id"))
 		resp := GetPullRequestsAssignedResponse{}
 		for _, pr := range prs {
-			prResp := GetPullRequestResponse{
+			prResp := GetPullRequestShortResponse{
 				ID:       pr.ID,
 				Title:    pr.Title,
 				AuthorID: pr.AuthorID,
@@ -153,16 +125,10 @@ func GetPullRequestsAssignedHandler(log *slog.Logger, userService userService.Us
 			} else {
 				prResp.Status = "MERGED"
 			}
-			if pr.Reviewer1ID.Valid {
-				prResp.Reviewer1 = &pr.Reviewer1ID.Int64
-			}
-			if pr.Reviewer2ID.Valid {
-				prResp.Reviewer2 = &pr.Reviewer2ID.Int64
-			}
 			resp.OpenedPr = append(resp.OpenedPr, prResp)
 		}
 		if err != nil {
-			log.Error("failed to get pull requests assigned to user", "user_id", userId, "error", err)
+			log.Error("failed to get pull requests assigned to user", "user_id", r.PathValue("user_id"), "error", err)
 			http.Error(w, "Error while getting pull requests assigned to user", http.StatusInternalServerError)
 			return
 		}

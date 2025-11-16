@@ -7,15 +7,15 @@ import (
 )
 
 func (db *DB) AddPullRequest(
-	ctx context.Context, title string, authorId int64, isOpened bool, rev1, rev2 *int64,
+	ctx context.Context, title string, authorId string, isOpened bool, rev1, rev2 *string,
 ) (int64, error) {
 	var id int64
-	var r1, r2 sql.NullInt64
+	var r1, r2 sql.NullString
 	if rev1 != nil {
-		r1 = sql.NullInt64{Int64: *rev1, Valid: true}
+		r1 = sql.NullString{String: *rev1, Valid: true}
 	}
 	if rev2 != nil {
-		r2 = sql.NullInt64{Int64: *rev2, Valid: true}
+		r2 = sql.NullString{String: *rev2, Valid: true}
 	}
 
 	err := db.conn.QueryRowContext(
@@ -55,7 +55,7 @@ func (db *DB) MergePullRequest(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (db *DB) ChangeReviewer1(ctx context.Context, pullReqId int64, newReviewerId int64) error {
+func (db *DB) ChangeReviewer1(ctx context.Context, pullReqId int64, newReviewerId string) error {
 	_, err := db.conn.ExecContext(
 		ctx,
 		`UPDATE pull_requests SET reviewer1_id = $1 WHERE id = $2`,
@@ -69,7 +69,7 @@ func (db *DB) ChangeReviewer1(ctx context.Context, pullReqId int64, newReviewerI
 	return nil
 }
 
-func (db *DB) ChangeReviewer2(ctx context.Context, pullReqId int64, newReviewerId int64) error {
+func (db *DB) ChangeReviewer2(ctx context.Context, pullReqId int64, newReviewerId string) error {
 	_, err := db.conn.ExecContext(
 		ctx,
 		`UPDATE pull_requests SET reviewer2_id = $1 WHERE id = $2`,

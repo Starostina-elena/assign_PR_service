@@ -9,13 +9,12 @@ import (
 )
 
 type UserService interface {
-	CreateUser(ctx context.Context, name string, isActive bool) (int64, error)
-	GetUser(ctx context.Context, id int64) (core.User, error)
-	SetTeamToUser(ctx context.Context, userId, teamId int64) error
-	ExpellUserFromTeam(ctx context.Context, userId int64) error
-	ActivateUser(ctx context.Context, userId int64) error
-	DeactivateUser(ctx context.Context, userId int64) error
-	GetPullRequestAssigned(ctx context.Context, userId int64) ([]core.PullRequest, error)
+	CreateUser(ctx context.Context, id string, name string, isActive bool) error
+	GetUser(ctx context.Context, id string) (core.User, error)
+	SetTeamToUser(ctx context.Context, userId string, teamId int64) error
+	ExpellUserFromTeam(ctx context.Context, userId string) error
+	SetUserIsActive(ctx context.Context, userId string, isActive bool) error
+	GetPullRequestAssigned(ctx context.Context, userId string) ([]core.PullRequest, error)
 }
 
 type UserServiceImpl struct {
@@ -27,14 +26,14 @@ func NewUserService(log *slog.Logger, storage *storage.DB) UserService {
 	return &UserServiceImpl{storage: storage, log: log}
 }
 
-func (s *UserServiceImpl) CreateUser(ctx context.Context, name string, isActive bool) (int64, error) {
+func (s *UserServiceImpl) CreateUser(ctx context.Context, id string, name string, isActive bool) error {
 	if name == "" {
-		return 0, errors.New("name required")
+		return errors.New("name required")
 	}
-	return s.storage.AddUser(ctx, name, isActive)
+	return s.storage.AddUser(ctx, id, name, isActive)
 }
 
-func (s *UserServiceImpl) GetUser(ctx context.Context, id int64) (core.User, error) {
+func (s *UserServiceImpl) GetUser(ctx context.Context, id string) (core.User, error) {
 	user, err := s.storage.GetUserByID(ctx, id)
 	if err != nil {
 		return core.User{}, err
@@ -42,22 +41,18 @@ func (s *UserServiceImpl) GetUser(ctx context.Context, id int64) (core.User, err
 	return user, nil
 }
 
-func (s *UserServiceImpl) SetTeamToUser(ctx context.Context, userId, teamId int64) error {
+func (s *UserServiceImpl) SetTeamToUser(ctx context.Context, userId string, teamId int64) error {
 	return s.storage.SetTeamToUser(ctx, userId, teamId)
 }
 
-func (s *UserServiceImpl) ExpellUserFromTeam(ctx context.Context, userId int64) error {
+func (s *UserServiceImpl) ExpellUserFromTeam(ctx context.Context, userId string) error {
 	return s.storage.ExpellUserFromTeam(ctx, userId)
 }
 
-func (s *UserServiceImpl) ActivateUser(ctx context.Context, userId int64) error {
-	return s.storage.ActivateUser(ctx, userId)
+func (s *UserServiceImpl) SetUserIsActive(ctx context.Context, userId string, isActive bool) error {
+	return s.storage.SetUserIsActive(ctx, userId, isActive)
 }
 
-func (s *UserServiceImpl) DeactivateUser(ctx context.Context, userId int64) error {
-	return s.storage.DeactivateUser(ctx, userId)
-}
-
-func (s *UserServiceImpl) GetPullRequestAssigned(ctx context.Context, userId int64) ([]core.PullRequest, error) {
+func (s *UserServiceImpl) GetPullRequestAssigned(ctx context.Context, userId string) ([]core.PullRequest, error) {
 	return s.storage.GetPullRequestsAssigned(ctx, userId)
 }

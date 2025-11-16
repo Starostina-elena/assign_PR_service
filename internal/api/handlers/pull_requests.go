@@ -13,7 +13,7 @@ import (
 
 type CreatePullRequestRequest struct {
 	Title    string `json:"title"`
-	AuthorID int64  `json:"author_id"`
+	AuthorID string `json:"author_id"`
 	IsOpened bool   `json:"is_opened"`
 }
 
@@ -42,12 +42,12 @@ func CreatePullRequestHandler(log *slog.Logger, pullRequestService PullRequestSe
 }
 
 type GetPullRequestResponse struct {
-	ID        int64  `json:"id"`
-	Title     string `json:"title"`
-	AuthorID  int64  `json:"author_id"`
-	Reviewer1 *int64 `json:"reviewer_1,omitempty"`
-	Reviewer2 *int64 `json:"reviewer_2,omitempty"`
-	Status    string `json:"is_opened"`
+	ID        int64   `json:"id"`
+	Title     string  `json:"title"`
+	AuthorID  string  `json:"author_id"`
+	Reviewer1 *string `json:"reviewer_1,omitempty"`
+	Reviewer2 *string `json:"reviewer_2,omitempty"`
+	Status    string  `json:"is_opened"`
 }
 
 func GetPullRequestHandler(log *slog.Logger, pullRequestService PullRequestService.PullRequestService) http.HandlerFunc {
@@ -75,10 +75,10 @@ func GetPullRequestHandler(log *slog.Logger, pullRequestService PullRequestServi
 			resp.Status = "MERGED"
 		}
 		if pr.Reviewer1ID.Valid {
-			resp.Reviewer1 = &pr.Reviewer1ID.Int64
+			resp.Reviewer1 = &pr.Reviewer1ID.String
 		}
 		if pr.Reviewer2ID.Valid {
-			resp.Reviewer2 = &pr.Reviewer2ID.Int64
+			resp.Reviewer2 = &pr.Reviewer2ID.String
 		}
 
 		w.Header().Set("Content-Type", "application/json")
